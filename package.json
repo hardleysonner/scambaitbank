@@ -4,6 +4,15 @@
   "description": "ScamBaitBank (SBB): a fake bank where account-takeover scammers meet Galina Nikitichna and her video verification.",
   "type": "module",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/smoke.test.js",
+    "test:e2e": "playwright test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
 }
