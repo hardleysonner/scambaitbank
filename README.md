@@ -64,7 +64,7 @@ The end-to-end tests stub the camera, so they always use the pretend video. CI r
 
 - Malformed URLs (`/%`, `GET http://[`) get a 400 instead of crashing the process.
 - Only GET and HEAD are allowed. Path traversal is blocked.
-- A strict Content-Security-Policy allows the app's own script only by its hash. It also blocks framing (anti-clickjacking for the camera prompt) and is backed by nosniff, Referrer-Policy and a Permissions-Policy that allows the camera only for the app.
+- A strict Content-Security-Policy allows scripts only as same-origin files (`script-src 'self'`), so injected markup can't run code. It also blocks framing (anti-clickjacking for the camera prompt) and is backed by nosniff, Referrer-Policy and a Permissions-Policy that allows the camera only for the app.
 - User input is escaped or set as text, so there is no XSS. The camera is released whenever the recorder closes.
 
 ## Limits of the demo
@@ -76,9 +76,11 @@ The end-to-end tests stub the camera, so they always use the pretend video. CI r
 
 ## Files
 
-- `public/index.html`: the whole app (terminal intro, decoy bank, Scam Bait Bingo with 100 tasks, recorder, Behind the scenes)
+- `public/index.html`: the page markup; it loads `css/*.css` and `js/main.js` (plain ES modules, no build step)
+- `public/js/`: `intro.js` (terminal), `bank.js` + `auth.js` (decoy bank, verification, unclosable window), `bingo.js` + `bingo-engine.js` (Scam Bait Bingo rules), `tasks.js` (100 tasks), `verdicts.js`, `recorder.js` (camera + pretend video), `lunch.js`, `bts.js` (Behind the scenes), `util.js`
+- `public/css/`: styles split by screen
 - `server.js`: the static server
-- `test/`, `e2e/`: server tests and Playwright tests
+- `test/`, `e2e/`: server tests, Bingo engine unit tests and Playwright tests
 
 ## Built with
 
