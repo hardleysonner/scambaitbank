@@ -1,7 +1,7 @@
 {
   "name": "scambaitbank",
   "version": "0.3.0",
-  "description": "ScamBaitBank (SBB): a fake UAE bank where account-takeover scammers chase an AED 55,000 transfer through endless video-verification Bingo while their videos go straight in the bin.",
+  "description": "ScamBaitBank (SBB): product demo of ScamBait, a decoy banking session for scammers the bank's fraud model has already flagged. The real account is frozen while the scammer wastes time on absurd video-verification Bingo.",
   "type": "module",
   "main": "server.js",
   "scripts": {
