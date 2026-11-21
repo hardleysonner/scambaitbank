@@ -515,8 +515,9 @@ $("awX").onclick = () => {
 };
 
 /* ===================== Video recorder (records, never analyses, then bins it) ===================== */
-const rec = { stream: null, mr: null, chunks: [], t0: 0, timer: 0, recording: false, fake: false };
+const rec = { stream: null, mr: null, chunks: [], t0: 0, timer: 0, recording: false, fake: false, session: 0 };
 async function openRecorder() {
+  const session = ++rec.session;
   $("rec").hidden = false; $("upbar").hidden = true; $("upfill").style.width = "0";
   $("recGo").textContent = "Start recording"; $("recGo").disabled = false; $("recDot").hidden = true;
   $("recOv").textContent = "Scam Bait Bingo";
@@ -524,14 +525,19 @@ async function openRecorder() {
   $("recNote").textContent = "Your video is sent securely to the specialist.";
   $("nocam").hidden = true; rec.fake = false;
   try {
-    rec.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+    // Closed (or reopened) while the camera was still answering: switch this late stream off.
+    if (session !== rec.session) { stream.getTracks().forEach((t) => t.stop()); return; }
+    rec.stream = stream;
     $("cam").srcObject = rec.stream; await $("cam").play();
   } catch {
+    if (session !== rec.session) return;
     rec.fake = true; $("nocam").hidden = false;
     $("nocam").textContent = "The camera isn't available in this window. Run the app from your laptop (node server.js) to record for real. You can still send a pretend video.";
   }
 }
 function closeRecorder() {
+  rec.session++;
   clearInterval(rec.timer);
   if (rec.mr && rec.mr.state !== "inactive") { rec.mr.onstop = null; rec.mr.stop(); }
   rec.stream?.getTracks().forEach((t) => t.stop());
