@@ -26,8 +26,19 @@ Open http://localhost:3000. No install is needed (Node 18 or newer). The camera 
 2. **0:40** Open online banking. It looks like any bank. Press **Send transfer**, then **Start Scam Bait Bingo**.
 3. **1:10** A volunteer plays the scammer: try to close the window, then open a card and do the passport squats live.
 4. **2:30** Open two or three more cards (spoon on nose, if you're lucky). Rejected, rejected, accepted, audit.
-5. **3:45** Open **Behind the scenes**: account frozen, 0 ₽ moved, videos binned, minutes wasted.
+5. **3:45** Open **Behind the scenes**: account frozen, AED 0 moved, videos binned, minutes wasted.
 6. **4:30** Close: "When the bank can't trust your face, it can still waste a scammer's night."
+
+## Tests
+
+```bash
+npm install
+npm test                                  # smoke test: starts server.js, checks GET / (no extra dependencies)
+npx playwright install --with-deps chromium
+npm run test:e2e                          # Playwright: walks the 5-minute demo in Chromium
+```
+
+The end-to-end tests stub the camera, so the recorder always uses the pretend-video fallback. CI (`.github/workflows/ci.yml`) runs both on pull requests and pushes to `main`, and uploads the Playwright HTML report and videos as artifacts.
 
 ## Files
 
