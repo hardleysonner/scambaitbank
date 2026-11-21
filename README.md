@@ -1,5 +1,7 @@
 # ScamBaitBank (SBB): ScamBait for banks
 
+**[Watch the demo](https://hardleysonner.github.io/scambaitbank/demo.mp4)** (90 s, also in [`docs/demo.mp4`](docs/demo.mp4))
+
 > **This is a product demo, not a banking system.** It shows what a bank could do *after* its own fraud-scoring model has flagged a session as a scammer. There is no real bank, money, AI or video analysis here.
 
 **Live demo:** https://hardleysonner.github.io/scambaitbank/
