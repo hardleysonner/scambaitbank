@@ -19,7 +19,7 @@ test("terminal places Ivan in the UAE, matching his AED bank", async ({ page }) 
 });
 
 test("behind-the-scenes button and panel declare z-index once and stay on top (60)", async ({ page, request }) => {
-  const html = await (await request.get("/")).text();
+  const html = await (await request.get("/css/bts.css")).text();
   for (const selector of [".bts-btn", ".bts"]) {
     const escaped = selector.replace(/[.-]/g, "\\$&");
     const rule = html.match(new RegExp(`^\\s*${escaped}\\s*\\{([^}]*)\\}`, "m"));

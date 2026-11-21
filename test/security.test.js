@@ -1,7 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import crypto from "node:crypto";
 import fs from "node:fs";
 import net from "node:net";
 import { fileURLToPath } from "node:url";
@@ -73,16 +72,15 @@ test("security headers are sent", async () => {
   }
 });
 
-test("CSP allows only the app's own inline script and blocks framing", async () => {
+test("CSP allows only the app's own script files and blocks framing", async () => {
   const csp = (await fetch(`http://localhost:${port}/`)).headers.get("content-security-policy");
   assert.ok(csp, "no CSP header");
   assert.match(csp, /frame-ancestors 'none'/);
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /base-uri 'none'/);
   const scriptSrc = csp.split(";").map((d) => d.trim()).find((d) => d.startsWith("script-src"));
-  assert.doesNotMatch(scriptSrc, /unsafe-inline|unsafe-eval/);
+  assert.equal(scriptSrc, "script-src 'self'");
   const html = fs.readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\r\n?/g, "\n");
-  const hash = crypto.createHash("sha256").update(script).digest("base64");
-  assert.ok(scriptSrc.includes(`'sha256-${hash}'`), "CSP does not carry the inline script hash");
+  assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/, "index.html has an inline script the CSP would block");
+  assert.match(html, /<script type="module" src="js\/main\.js"><\/script>/);
 });

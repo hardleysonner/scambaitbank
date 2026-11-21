@@ -1,0 +1,36 @@
+/* ---------- Verification Bingo ---------- */
+.bingo { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; display: grid; gap: 14px; align-content: start; background: #f7f9fc; }
+.b-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.b-head h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+.b-head h3 span { color: var(--gold); }
+.b-level { font-size: 12px; font-weight: 700; color: var(--brand-2); background: #e8f1fb; border-radius: 99px; padding: 4px 10px; }
+.b-rule { font-size: 13px; color: var(--muted); margin: -6px 0 0; }
+.board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; width: min(100%, 430px); margin: 0 auto; }
+.cell { aspect-ratio: 1; perspective: 600px; border: 0; padding: 0; background: none; cursor: pointer; min-width: 0; }
+.cell:disabled { cursor: default; }
+.cell .in { position: relative; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+.cell.open .in, .cell.ok .in, .cell.free .in { transform: rotateY(180deg); }
+.cell .f, .cell .bk { position: absolute; inset: 0; border-radius: 10px; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+.cell .f { background: repeating-linear-gradient(45deg, #123c69 0 8px, #16477a 8px 16px); color: var(--gold); font-weight: 800; font-size: clamp(10px, 2.6vw, 13px); border: 2px solid #0e2f52; }
+.cell:not(:disabled):hover .f { border-color: var(--gold); }
+.cell .bk { transform: rotateY(180deg); background: #fff; border: 2px solid var(--brand-2); color: var(--text); font-size: clamp(8px, 2.1vw, 10px); line-height: 1.25; padding: 4px; font-weight: 600; }
+.cell.ok .bk { display: block; line-height: 1.15; background: #e7f6ee; border-color: var(--ok); color: var(--ok); }
+/* Keeps text out of the ✓ corner, including any overflow lines. */
+.cell.ok .bk::before { content: ""; float: right; width: 17px; height: calc(100% + 80px); shape-outside: inset(calc(100% - 101px) 0 0 0); }
+.cell.ok .bk::after { content: "✓"; position: absolute; right: 5px; bottom: 2px; width: 15px; height: 22px; line-height: 22px; text-align: center; font-size: 18px; font-weight: 800; }
+.cell.free .bk { background: var(--gold); border-color: #a67b1d; color: var(--brand); font-size: 12px; font-weight: 800; }
+.cell.bad .bk { background: #fdecef; border-color: var(--bad); color: var(--bad); }
+.cell.win .bk { animation: glow 1s ease-in-out 3; }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px var(--gold); } }
+.task { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.task .lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.task p { margin: 0; font-size: 16px; font-weight: 700; }
+.task .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.verdicts { display: grid; gap: 6px; }
+.vd { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: #fdecef; color: #8a1f33; animation: pop .25s ease-out; }
+.vd.ok { background: #e7f6ee; color: #0f5c35; }
+.vd.info { background: #eef2f8; color: var(--brand); }
+.vd b { font-weight: 800; margin-right: 6px; }
+.recbtn { background: var(--bad); }
+.lunch { background: #fff8e6; border: 1px solid #f1e2b8; border-radius: 12px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.lunch b.num { font-size: 22px; margin-left: auto; color: #8a6413; cursor: default; }

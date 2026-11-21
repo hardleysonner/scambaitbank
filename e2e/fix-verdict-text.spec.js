@@ -42,7 +42,7 @@ test("rejected verdict text does not repeat the title", async ({ page }) => {
 
 test("no accept or reject line restates its verdict title", async ({ page }) => {
   await page.goto("/");
-  const { ok, rejected } = await page.evaluate(() => ({ ok: OK_LINES, rejected: VERDICTS }));
+  const { ok, rejected } = await page.evaluate(async () => { const { OK_LINES, VERDICTS } = await import("/js/verdicts.js"); return { ok: OK_LINES, rejected: VERDICTS }; });
   expect(ok.filter((l) => /accept/i.test(l))).toEqual([]);
   expect(rejected.filter((l) => /^\s*(rejected|not accepted)/i.test(l))).toEqual([]);
 });

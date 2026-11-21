@@ -1,0 +1,10 @@
+/* ---------- Hacker terminal ---------- */
+#term { position: fixed; inset: 0; background: var(--term); color: var(--term-fg); font: 14px/1.7 var(--mono); z-index: 40; display: flex; flex-direction: column; padding-block: max(20px, env(safe-area-inset-top, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+#term .bar { display: flex; justify-content: space-between; color: #2b8f56; border-bottom: 1px solid #12301d; padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+#termOut { flex: 1; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+#termOut .ok { color: #9dffc6; } #termOut .warn { color: #ffd166; } #termOut .dim { color: #2b8f56; }
+.cursor { display: inline-block; width: 9px; height: 16px; background: var(--term-fg); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.term-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 12px; }
+.tbtn { background: transparent; color: var(--term-fg); border: 1px solid var(--term-fg); padding: 10px 16px; cursor: pointer; font-family: var(--mono); }
+.tbtn.primary { background: var(--term-fg); color: var(--term); font-weight: 600; }
