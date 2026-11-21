@@ -1,0 +1,15 @@
+/* Layout: a believable retail-bank web app (top bar, account sidebar, main panel) with a support chat docked on the right. One light look on purpose: banks are bright. */
+:root {
+  color-scheme: light;
+  --brand: #123c69; --brand-2: #1d5fa3; --gold: #c99a2e; --bg: #f2f4f7; --card: #ffffff; --line: #e1e5ec;
+  --text: #172033; --muted: #66708a; --ok: #16804a; --bad: #c4314b; --term: #050806; --term-fg: #42f58d;
+  --f: "Manrope", system-ui, -apple-system, Segoe UI, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--f); }
+button, input, select { font: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+.num { font-variant-numeric: tabular-nums; }
