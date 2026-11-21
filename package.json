@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/smoke.test.js",
+    "test": "node --test test/smoke.test.js test/security.test.js",
     "test:e2e": "playwright test"
   },
   "engines": {
