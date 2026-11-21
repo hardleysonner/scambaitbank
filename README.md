@@ -26,7 +26,7 @@ Open http://localhost:3000. No install is needed (Node 18 or newer). The camera 
 2. **0:40** Open online banking. It looks like any bank. Press **Send transfer**, then **Start Scam Bait Bingo**.
 3. **1:10** A volunteer plays the scammer: try to close the window, then open a card and do the passport squats live.
 4. **2:30** Open two or three more cards (spoon on nose, if you're lucky). Rejected, rejected, accepted, audit.
-5. **3:45** Open **Behind the scenes**: account frozen, 0 ₽ moved, videos binned, minutes wasted.
+5. **3:45** Open **Behind the scenes**: account frozen, AED 0 moved, videos binned, minutes wasted.
 6. **4:30** Close: "When the bank can't trust your face, it can still waste a scammer's night."
 
 ## Files
