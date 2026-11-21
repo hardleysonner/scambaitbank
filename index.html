@@ -1,0 +1,571 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>ScamBaitBank</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a believable retail-bank web app (top bar, account sidebar, main panel) with a support chat docked on the right. One light look on purpose: banks are bright. */
+  :root {
+    color-scheme: light;
+    --brand: #123c69; --brand-2: #1d5fa3; --gold: #c99a2e; --bg: #f2f4f7; --card: #ffffff; --line: #e1e5ec;
+    --text: #172033; --muted: #66708a; --ok: #16804a; --bad: #c4314b; --term: #050806; --term-fg: #42f58d;
+    --f: "Manrope", system-ui, -apple-system, Segoe UI, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--f); }
+  button, input, select { font: inherit; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Hacker terminal ---------- */
+  #term { position: fixed; inset: 0; background: var(--term); color: var(--term-fg); font: 14px/1.7 var(--mono); z-index: 40; display: flex; flex-direction: column; padding-block: max(20px, env(safe-area-inset-top, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #term .bar { display: flex; justify-content: space-between; color: #2b8f56; border-bottom: 1px solid #12301d; padding-bottom: 8px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  #termOut { flex: 1; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #termOut .ok { color: #9dffc6; } #termOut .warn { color: #ffd166; } #termOut .dim { color: #2b8f56; }
+  .cursor { display: inline-block; width: 9px; height: 16px; background: var(--term-fg); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .term-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 12px; }
+  .tbtn { background: transparent; color: var(--term-fg); border: 1px solid var(--term-fg); padding: 10px 16px; cursor: pointer; font-family: var(--mono); }
+  .tbtn.primary { background: var(--term-fg); color: var(--term); font-weight: 600; }
+
+  /* ---------- Bank shell ---------- */
+  .top { background: var(--brand); color: #fff; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .top-in { display: flex; align-items: center; gap: 20px; height: 60px; max-width: 1280px; margin: 0 auto; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
+  .logo i { width: 34px; height: 34px; border-radius: 9px; background: var(--gold); color: var(--brand); display: grid; place-items: center; font-style: normal; font-size: 13px; font-weight: 800; }
+  .top nav { display: flex; gap: 2px; }
+  .top nav a { color: #c9d6ea; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+  .top nav a.on { color: #fff; background: rgba(255,255,255,.12); }
+  .who { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .who .av { width: 34px; height: 34px; border-radius: 50%; background: #e9eef6; color: var(--brand); display: grid; place-items: center; font-weight: 800; }
+  @media (max-width: 860px) { .top nav { display: none; } .who span { display: none; } }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; }
+  body.chat-open .wrap { grid-template-columns: minmax(0, 1fr) 420px; }
+  @media (max-width: 1000px) { .wrap, body.chat-open .wrap { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+  .card h2 { margin: 0 0 14px; font-size: 17px; font-weight: 700; }
+  .stack { display: grid; gap: 20px; align-content: start; min-width: 0; }
+  .hello { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 14px; }
+
+  .acct { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .acct { grid-template-columns: 1fr; } }
+  .bankcard { border-radius: 16px; padding: 20px; color: #fff; background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 70%, #3a86c8 100%); min-height: 190px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+  .bankcard::after { content: ""; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 30px solid rgba(255,255,255,.07); }
+  .bankcard .lbl { font-size: 13px; opacity: .8; }
+  .bankcard .bal { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+  .bankcard .row { display: flex; justify-content: space-between; align-items: end; font: 14px var(--mono); gap: 10px; flex-wrap: wrap; }
+  .chipimg { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #e8c66a, #b88d2c); }
+  .quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .qa { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fafbfd; cursor: pointer; text-align: left; color: var(--text); }
+  .qa b { display: block; font-size: 14px; }
+  .qa span { font-size: 12px; color: var(--muted); }
+  .qa.hot { border-color: var(--brand-2); background: #eef5fd; }
+
+  .tx { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tx td { padding: 10px 4px; border-bottom: 1px solid var(--line); }
+  .tx tr:last-child td { border-bottom: 0; }
+  .tx td:last-child { text-align: right; font-weight: 700; white-space: nowrap; }
+  .tx .in { color: var(--ok); }
+  .tx small { display: block; color: var(--muted); font-size: 12px; }
+
+  .form { display: grid; gap: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+  .field input, .field select { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px) { .two { grid-template-columns: 1fr; } }
+  .btn { border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 700; cursor: pointer; background: var(--brand); color: #fff; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.light { background: #eef2f8; color: var(--brand); }
+  .note { font-size: 12px; color: var(--muted); }
+  .spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; display: inline-block; animation: spin .8s linear infinite; vertical-align: -4px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Verification modal ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(10,20,35,.55); display: flex; align-items: center; justify-content: center; z-index: 30; padding: 16px; }
+  .modal .box { background: #fff; border-radius: 16px; padding: 24px; width: min(460px, 100%); display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .modal h3 { margin: 0; font-size: 20px; }
+  .shield { width: 46px; height: 46px; border-radius: 12px; background: #fff4dc; color: var(--gold); display: grid; place-items: center; font-weight: 800; font-size: 22px; }
+
+  /* ---------- Verification Bingo ---------- */
+  .bingo { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; display: grid; gap: 14px; align-content: start; background: #f7f9fc; }
+  .b-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .b-head h3 { margin: 0; font-size: 20px; letter-spacing: -.01em; }
+  .b-head h3 span { color: var(--gold); }
+  .b-level { font-size: 12px; font-weight: 700; color: var(--brand-2); background: #e8f1fb; border-radius: 99px; padding: 4px 10px; }
+  .b-rule { font-size: 13px; color: var(--muted); margin: -6px 0 0; }
+  .board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; width: min(100%, 430px); margin: 0 auto; }
+  .cell { aspect-ratio: 1; perspective: 600px; border: 0; padding: 0; background: none; cursor: pointer; min-width: 0; }
+  .cell:disabled { cursor: default; }
+  .cell .in { position: relative; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+  .cell.open .in, .cell.ok .in, .cell.free .in { transform: rotateY(180deg); }
+  .cell .f, .cell .bk { position: absolute; inset: 0; border-radius: 10px; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+  .cell .f { background: repeating-linear-gradient(45deg, #123c69 0 8px, #16477a 8px 16px); color: var(--gold); font-weight: 800; font-size: clamp(10px, 2.6vw, 13px); border: 2px solid #0e2f52; }
+  .cell:not(:disabled):hover .f { border-color: var(--gold); }
+  .cell .bk { transform: rotateY(180deg); background: #fff; border: 2px solid var(--brand-2); color: var(--text); font-size: clamp(8px, 2.1vw, 10px); line-height: 1.25; padding: 4px; font-weight: 600; }
+  .cell.ok .bk { background: #e7f6ee; border-color: var(--ok); color: var(--ok); }
+  .cell.ok .bk::after { content: "✓"; position: absolute; right: 5px; bottom: 2px; font-size: 18px; font-weight: 800; }
+  .cell.free .bk { background: var(--gold); border-color: #a67b1d; color: var(--brand); font-size: 12px; font-weight: 800; }
+  .cell.bad .bk { background: #fdecef; border-color: var(--bad); color: var(--bad); }
+  .cell.win .bk { animation: glow 1s ease-in-out 3; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 4px var(--gold); } }
+  .task { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+  .task .lbl { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .task p { margin: 0; font-size: 16px; font-weight: 700; }
+  .task .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .verdicts { display: grid; gap: 6px; }
+  .vd { font-size: 13px; padding: 8px 10px; border-radius: 8px; background: #fdecef; color: #8a1f33; animation: pop .25s ease-out; }
+  .vd.ok { background: #e7f6ee; color: #0f5c35; }
+  .vd.info { background: #eef2f8; color: var(--brand); }
+  .vd b { font-weight: 800; margin-right: 6px; }
+  .recbtn { background: var(--bad); }
+  .lunch { background: #fff8e6; border: 1px solid #f1e2b8; border-radius: 12px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .lunch b.num { font-size: 22px; margin-left: auto; color: #8a6413; cursor: default; }
+
+  /* ---------- Unclosable authentication window ---------- */
+  .authwin { position: fixed; inset: 0; background: rgba(8,18,34,.62); backdrop-filter: blur(3px); z-index: 35; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  .aw-box { width: min(640px, 100%); height: min(820px, 100%); background: #fff; border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,.4); display: flex; flex-direction: column; overflow: hidden; animation: pop .25s ease-out; }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } }
+  .aw-box.shake { animation: shake .4s; }
+  @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .aw-title { display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; background: #0b2a4a; color: #fff; }
+  .aw-title b { display: block; font-size: 14px; }
+  .aw-title span { display: block; font-size: 12px; color: #a9bfdc; }
+  .aw-x { margin-left: auto; width: 34px; height: 34px; border-radius: 8px; border: 0; background: rgba(255,255,255,.1); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; flex: none; }
+  .aw-warn { background: #fdecef; color: var(--bad); font-size: 13px; font-weight: 600; padding: 10px 18px; border-bottom: 1px solid #f6c9d2; }
+
+  /* ---------- Video recorder ---------- */
+  #rec { position: fixed; inset: 0; background: rgba(5,10,20,.85); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .rec-box { background: #fff; border-radius: 16px; width: min(680px, 100%); max-height: 100%; overflow-y: auto; padding: 18px; display: grid; gap: 12px; }
+  .rec-box h3 { margin: 0; font-size: 18px; }
+  .screen { position: relative; aspect-ratio: 4/3; max-width: 100%; background: #0b0f17; border-radius: 12px; overflow: hidden; }
+  .screen video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .recdot { position: absolute; left: 14px; top: 12px; color: #fff; font: 600 14px var(--mono); display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.45); padding: 4px 10px; border-radius: 99px; }
+  .recdot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #ff3b3b; animation: blink 1s steps(1) infinite; }
+  .screen .ov { position: absolute; right: 14px; top: 12px; color: #fff; font: 600 14px var(--mono); background: rgba(0,0,0,.45); padding: 4px 10px; border-radius: 99px; }
+  .screen .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 14px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.75)); font-size: 14px; }
+  .nocam { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #b7c0d3; padding: 24px; font-size: 14px; }
+  .upbar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .upbar i { display: block; height: 100%; width: 0; background: var(--brand-2); }
+  .rec-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .rec-actions .grow { flex: 1; }
+
+  /* ---------- Behind the scenes ---------- */
+  .bts-btn { z-index: 60 !important; position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 20; background: #0e1726; color: #cfe3ff; border: 0; border-radius: 99px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+  .bts { z-index: 60 !important; position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 48px); width: min(380px, calc(100vw - 32px)); background: #0e1726; color: #dbe6f7; border-radius: 14px; padding: 16px; z-index: 20; font-size: 13px; display: grid; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  .bts h4 { margin: 0; font-size: 14px; color: #fff; }
+  .bts .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .bts .stats div { background: #172338; border-radius: 10px; padding: 8px; }
+  .bts .stats b { display: block; font: 600 18px var(--mono); color: #ffd166; }
+  .bts .stats span { font-size: 11px; color: #8fa3c4; }
+  .bts ul { margin: 0; padding-left: 16px; font-family: var(--mono); font-size: 12px; color: #9fb4d6; max-height: 180px; overflow-y: auto; }
+</style>
+
+<!-- ===================== Hacker terminal ===================== -->
+<div id="term">
+  <div class="bar"><span>root@kali:~/ops/sbb</span><span id="termClock">02:03:07</span></div>
+  <div id="termOut"></div>
+  <div class="term-actions">
+    <button class="tbtn primary" id="enterBank" hidden>open https://online.sbb.bank (as Ivan Petrov)</button>
+    <button class="tbtn" id="skipTerm">skip intro</button>
+  </div>
+</div>
+
+<!-- ===================== Bank ===================== -->
+<header class="top">
+  <div class="top-in">
+    <div class="logo"><i>SBB</i>ScamBaitBank</div>
+    <nav><a class="on" href="#">Home</a><a href="#">Payments</a><a href="#">Cards</a><a href="#">Savings</a><a href="#">Support</a></nav>
+    <div class="who"><span>Ivan Petrov</span><div class="av">IP</div></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stack">
+    <div>
+      <p class="hello">Good night, Ivan</p>
+      <div class="sub">Last login: today, 02:03 from Galaxy S24 · Identity verified with Face ID and SBB Verify</div>
+    </div>
+
+    <div class="acct">
+      <div class="bankcard">
+        <div style="display:flex;justify-content:space-between;align-items:start"><div><div class="lbl">Current account ·· 3341</div><div class="bal num" id="bal">AED 58,420.50</div></div><div class="chipimg"></div></div>
+        <div class="row"><span>4276 •••• •••• 3341</span><span>IVAN PETROV</span><span>09/29</span></div>
+      </div>
+      <div class="quick">
+        <button class="qa hot" id="qaTransfer"><b>Transfer</b><span>To another bank or person</span></button>
+        <button class="qa"><b>Top up phone</b><span>No commission</span></button>
+        <button class="qa"><b>Pay bills</b><span>Utilities, internet, fines</span></button>
+        <button class="qa" id="qaSupport"><b>Support chat</b><span>We answer 24/7</span></button>
+      </div>
+    </div>
+
+    <div class="card" id="transferCard">
+      <h2>New transfer</h2>
+      <form class="form" id="tform">
+        <div class="field"><label for="from">From</label><select id="from"><option>Current account ·· 3341 · AED 58,420.50</option></select></div>
+        <div class="two">
+          <div class="field"><label for="to">Recipient</label><input id="to" value="Golden Sands Crypto FZE"></div>
+          <div class="field"><label for="iban">Account / IBAN</label><input id="iban" value="AE07 0331 2345 6789 0123 456"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="amt">Amount, AED</label><input id="amt" class="num" value="55,000.00"></div>
+          <div class="field"><label for="purpose">Purpose</label><input id="purpose" value="Investment, personal funds"></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn" id="sendBtn">Send transfer</button><span class="note">Transfers abroad arrive within 1 business day.</span></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Recent transactions</h2>
+      <table class="tx">
+        <tr><td>Carrefour · Mall of the Emirates<small>Yesterday, 19:42 · Groceries</small></td><td class="num">−AED 312.40</td></tr>
+        <tr><td>Salary · Emirates Logistics LLC<small>20 Nov · Income</small></td><td class="num in">+AED 18,500.00</td></tr>
+        <tr><td>Mom<small>18 Nov · Transfer</small></td><td class="num">−AED 1,000.00</td></tr>
+        <tr><td>Salik · road toll<small>18 Nov · Transport</small></td><td class="num">−AED 40.00</td></tr>
+        <tr><td>DEWA · electricity and water<small>15 Nov · Utilities</small></td><td class="num">−AED 645.20</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <aside class="stack" id="side">
+    <div class="card" id="promo">
+      <h2>SBB Premium</h2>
+      <p class="sub" style="margin:0 0 12px">Cashback up to 10% and a personal manager who is always awake.</p>
+      <button class="btn light">Learn more</button>
+    </div>
+  </aside>
+</div>
+
+<div class="authwin" id="authWin" hidden>
+  <div class="aw-box" id="awBox" role="dialog" aria-modal="true" aria-label="Transfer authentication">
+    <div class="aw-title">
+      <div><b>SBB Secure · Transfer authentication</b><span>AED 55,000.00 to Golden Sands Crypto FZE · pending verification</span></div>
+      <button class="aw-x" id="awX" aria-label="Close">×</button>
+    </div>
+    <div class="aw-warn" id="awWarn" hidden>This window cannot be closed until verification is complete. Closing it may block your account. Thank you for understanding.</div>
+    <section class="bingo" aria-label="Verification Bingo">
+      <div class="b-head"><h3>Scam Bait <span>Bingo</span></h3><span class="b-level" id="bLevel">Level 1 of 7</span></div>
+      <p class="b-rule">Open any card to get your verification task. Record each task on video. Complete a full row, column or diagonal to verify the transfer.</p>
+      <div class="board" id="board"></div>
+      <div class="lunch" id="lunch" hidden><span><b>Verification server lunch break.</b> The service will resume in</span><b class="num" id="lunchLeft" title="Double-click to end the break early (demo control)">30:00</b></div>
+      <div class="task" id="taskBox" hidden>
+        <span class="lbl">Your task</span>
+        <p id="taskText"></p>
+        <div class="row"><button class="btn recbtn" id="recBtn">Record video</button><span class="note">The video is reviewed by Scam Bait Bingo. Do not leave the frame.</span></div>
+      </div>
+      <div class="verdicts" id="verdicts" aria-live="polite"></div>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="verify" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="vTitle">
+    <div class="shield">!</div>
+    <h3 id="vTitle">Additional verification required</h3>
+    <p class="sub" style="margin:0">For your safety, night-time transfers over AED 20,000 must be confirmed with Scam Bait Bingo, our quick video check. It usually takes 2 to 3 minutes.</p>
+    <button class="btn" id="connect">Start Scam Bait Bingo</button>
+  </div>
+</div>
+
+<div id="rec" hidden>
+  <div class="rec-box" role="dialog" aria-modal="true" aria-labelledby="recTitle">
+    <h3 id="recTitle">Video verification</h3>
+    <div class="screen">
+      <video id="cam" playsinline muted></video>
+      <div class="nocam" id="nocam" hidden></div>
+      <div class="recdot" id="recDot" hidden>REC <span id="recTime" class="num">00:00</span></div>
+      <div class="ov" id="recOv"></div>
+      <div class="cap" id="recCap"></div>
+    </div>
+    <div class="upbar" id="upbar" hidden><i id="upfill"></i></div>
+    <div class="rec-actions">
+      <span class="grow note" id="recNote">Your video is sent securely to the specialist.</span>
+      <button class="btn light" id="recCancel">Cancel</button>
+      <button class="btn recbtn" id="recGo">Start recording</button>
+    </div>
+  </div>
+</div>
+
+<button class="bts-btn" id="btsBtn" hidden>Behind the scenes</button>
+<div class="bts" id="bts" hidden>
+  <h4>What the scammer doesn't see</h4>
+  <div class="stats"><div><b class="num" id="btsTime">0:00</b><span>scammer time wasted</span></div><div><b class="num" id="btsVids">0</b><span>videos binned</span></div><div><b class="num">AED 0</b><span>money moved</span></div></div>
+  <ul id="btsLog"></ul>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+let clock = new Date(2026, 10, 21, 2, 3, 7);
+const hhmm = () => clock.toTimeString().slice(0, 5);
+setInterval(() => { clock = new Date(clock.getTime() + 1000); $("termClock").textContent = clock.toTimeString().slice(0, 8); }, 1000);
+
+/* ===================== Behind the scenes ===================== */
+const bts = { start: 0, vids: 0 };
+function btsLog(t) { $("btsLog").insertAdjacentHTML("afterbegin", `<li>${hhmm()} ${esc(t)}</li>`); }
+setInterval(() => { if (bts.start) { const s = Math.floor((Date.now() - bts.start) / 1000); $("btsTime").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; } }, 1000);
+$("btsBtn").onclick = () => { $("bts").hidden = !$("bts").hidden; };
+
+/* ===================== Hacker terminal ===================== */
+const TERM = [
+  ["dim", "$ ./takeover.sh --target \"Ivan Petrov\" --bank sbb"],
+  ["", "[*] loading leaked KYC dump (sbb_kyc_2026-11-20.tar.gz) ........ 2.4M records"],
+  ["ok", "[+] target found: Ivan Petrov, 34, Moscow, acct ··3341"],
+  ["", "[*] spoofing device fingerprint: Galaxy S24 / Android 15"],
+  ["", "[*] routing through tor exit 185.220.101.4"],
+  ["", "[*] liveness check: streaming deepfake_ivan_v3.mp4 to SBB Verify"],
+  ["ok", "[+] Face ID: PASSED (confidence 0.98)"],
+  ["", "[*] KYC re-verification via compromised provider"],
+  ["ok", "[+] KYC: PASSED"],
+  ["", "[*] swapping phone number to +971 50 ••• 88 31"],
+  ["ok", "[+] SMS 2FA now delivered to our phone"],
+  ["ok", "[+] session token acquired. Online banking is ours."],
+  ["warn", "[!] balance AED 58,420.50. Mule ready: Golden Sands Crypto FZE (Dubai)"],
+];
+let termDone = false;
+async function runTerm() {
+  const out = $("termOut");
+  for (const [cls, line] of TERM) {
+    if (termDone) return;
+    const div = document.createElement("div"); div.className = cls; out.append(div);
+    for (let i = 0; i <= line.length; i += 3) { if (termDone) return; div.textContent = line.slice(0, i); await sleep(12); }
+    div.textContent = line; out.scrollTop = 1e9;
+    await sleep(cls === "ok" ? 380 : 220);
+  }
+  out.insertAdjacentHTML("beforeend", '<div class="dim">$ <span class="cursor"></span></div>');
+  $("enterBank").hidden = false; $("enterBank").focus();
+}
+function enterBank() {
+  termDone = true; $("term").hidden = true;
+  btsLog("Takeover pattern: 2am login, new device on Tor, phone swap, KYC re-check");
+  btsLog("Real account quietly frozen. Ivan woken on his pre-registered channel");
+  $("btsBtn").hidden = false;
+}
+$("enterBank").onclick = enterBank;
+$("skipTerm").onclick = enterBank;
+
+/* ===================== Bank ===================== */
+$("qaTransfer").onclick = () => { $("transferCard").scrollIntoView({ behavior: "smooth" }); $("amt").focus(); };
+$("qaSupport").onclick = () => { $("transferCard").scrollIntoView({ behavior: "smooth" }); };
+$("tform").onsubmit = async (e) => {
+  e.preventDefault();
+  const b = $("sendBtn"); b.disabled = true; b.innerHTML = '<span class="spinner"></span>Checking transfer…';
+  await sleep(1600);
+  b.disabled = false; b.textContent = "Send transfer";
+  btsLog(`Transfer attempt: AED ${$("amt").value} to ${$("to").value}. Not executed`);
+  $("verify").hidden = false; $("connect").focus();
+};
+$("connect").onclick = () => { $("verify").hidden = true; openAuth(); };
+
+/* ===================== Verification Bingo (no AI, nothing is analysed) ===================== */
+const TASKS = ["Do 100 squats holding your passport open at the photo page.","Find a spoon and balance it on your nose for 10 seconds.","Hold a slice of bread to your ear and say \"allo, bank?\" three times.","Put a sock on your hand and introduce the sock to the camera by its full name.","Show us your fridge, open, while humming the national anthem.","Stand on one leg and recite your card number backwards.","Put a saucepan on your head and salute.","Count to 20 in a whisper while touching your nose with your left elbow.","Draw a cat on paper with your non-writing hand and show it for 5 seconds.","Hop like a kangaroo from one wall to the other.","Hold an onion and look at it with respect for 15 seconds.","Show your left heel to the camera. Only the left one.","Do the robot dance while saying \"I am not a robot\".","Wear a colander and say \"SBB, I trust you\" in a deep voice.","Clap 37 times. Not 36. Not 38.","Spin around 5 times, then point at the north.","Put two forks behind your ears like antennas and nod slowly.","Show us a houseplant and introduce yourself to it.","Hold your breath while doing a thumbs-up for 12 seconds.","Read the label of any shampoo bottle with dramatic emotion.","Balance a book on your head and walk in a figure eight.","Peel a banana using only your left hand.","Put a teaspoon in your mouth and hold a second teaspoon on it.","Bark like a small dog, then like a big dog.","Show your passport, then your hand, then your passport again.","Sing \"Happy birthday\" to your kettle.","Wear oven gloves and type \"SBB\" on your phone.","Hold a pencil between your nose and upper lip and smile.","Do 10 star jumps while saying your account number on every jump.","Touch your toes and say \"I authorise this\" on the way up.","Put a pot lid in each hand and do one cymbal crash.","Show the camera your best surprised face, three times, each more surprised.","Make a paper hat from any document and wear it officially.","Walk backwards across the room while looking proud.","Show us your keys and name each key.","Pretend to be a washing machine on the spin cycle.","Hold a mug like a microphone and give a 10-second speech about interest rates.","Put a sticker or a piece of tape on your forehead and look serious.","Wave hello with your foot.","Draw your signature in the air with your nose.","Hold an apple in front of your face and say \"this is not my face\".","Do a slow-motion run on the spot for 15 seconds.","Show us under your bed. Just to check.","Put a towel on your head like a turban and declare your income.","Say \"cucumber\" 10 times, each time in a different voice.","Imitate a printer that only works on Tuesdays.","Hold a remote control and change the channel of reality.","Rub your belly and pat your head at the same time for 10 seconds.","Balance a coin on the back of your hand while blinking slowly.","Show us a spoon, a fork and a knife, in that order, with a bow.","March in place and announce \"transfer coming!\" every 5 steps.","Lie on the floor and pretend to be a starfish for 10 seconds.","Put a lemon on your shoulder and walk to the window.","Sneeze on purpose. A polite sneeze, please.","Wear sunglasses and read the terms and conditions aloud.","Pretend your phone is very heavy and lift it with both hands.","Make a sandwich and show it from three angles.","Do a plank and sing the SBB anthem. You know the anthem.","Put a slipper on your ear and call your grandmother with it.","Show us a cloud through the window. Any cloud.","Juggle two socks. Rolled socks are allowed.","Write \"I am Ivan\" on paper and fold it into a tiny hat for your thumb.","Stand like a flamingo and tell a joke.","Brush your hair with a fork.","Hold a glass of water on your head while saying \"I am calm\".","Point at every corner of the room and name it.","Do the moonwalk on carpet.","Show us your elbow and explain why it is your elbow.","Draw a moustache on your finger and make it talk.","Put on two different shoes and walk confidently.","Tie your shoelaces with your eyes closed.","Show us the inside of your microwave and wave at it.","Do 5 push-ups and thank each push-up personally.","Hold a carrot like a cigar and say \"business is business\".","Bounce a ball 21 times without losing it.","Pretend to be a penguin who wants to make a transfer.","Fold a paper plane and throw it at the camera, gently.","Show us the time on three different clocks.","Wear a scarf, a hat and mittens and say \"summer in Dubai\".","Hum a song with a spoon in your mouth.","Put an ice cube in your hand and hold it until it says something.","Describe a cartwheel using only your hands and sound effects.","Look into the camera without blinking for 30 seconds.","Spell \"verification\" with your arms like YMCA.","Show us a pillow and fluff it with respect.","Make the sound of a modem connecting to the internet.","Stand on tiptoe and say \"I see the bank from here\".","Show us your toothbrush and say its age.","Put a pinch of salt on your palm and present it like a diamond.","Walk like a model from the kitchen to the camera.","Make a heart with your hands and hold it over your passport.","Hold a broom and play it like a guitar.","Pretend to be a statue for 20 seconds. Statues don't breathe loudly.","Do 3 squats while holding a spoon on your nose. Yes, both at once.","Show us your window and wave at a neighbour. Any neighbour.","Rotate your left wrist clockwise and your right wrist anticlockwise.","Say the alphabet backwards, in a whisper, while hopping.","Hug a cushion and say \"I will not send money to Dubai\".","Present a potato as your new business partner.","Do a slow bow to the camera and wait for applause."];
+const VERDICTS = [
+  "Angle is wrong: 84°. Regulation 112-K requires exactly 90°.",
+  "Video was recorded vertically. Scam Bait Bingo accepts horizontal verification only.",
+  "Task performed with the right hand. After midnight SBB is a left-handed bank.",
+  "Left ear not visible for 2.1 seconds. Ear ownership could not be confirmed.",
+  "Lighting 340 lux. Minimum for verification is 500 lux.",
+  "Subject blinked 4 times. Maximum allowed during verification: 3.",
+  "Unverified plant detected in background. Please remove the plant and retry.",
+  "Subject appeared too confident. Confidence is a fraud indicator.",
+  "Object colour does not match the reference object.",
+  "Video 0.3 s too short. The system rounds down.",
+  "Smiling detected. Verification requires a neutral, slightly tired face.",
+  "Reflection in window did not complete the task. All persons in frame must comply.",
+  "Passport not in frame. It was not requested, but it was expected.",
+  "Subject faced left. Scam Bait Bingo accepts right-facing subjects only.",
+  "Cat detected. Unauthorised third parties are not allowed in verification videos.",
+  "Task performed at an odd minute. Tasks are accepted at even minutes only.",
+  "Closing phrase missing: \"Verification complete, SBB\".",
+  "Video quality too high. Possible deepfake. Please lower quality and retry.",
+  "Video quality too low. Soul not visible.",
+  "Elbow angle 132°. Required: 135°.",
+  "Room orientation invalid. Task must be performed facing east.",
+  "Fridge noise exceeded 40 dB. Please unplug the fridge and retry.",
+  "Task performed twice. The system now detects two subjects. Both rejected.",
+  "Reviewer workstation froze. Not your fault. Not accepted.",
+  "Object ownership under 3 years. Please attach a receipt and retry.",
+  "Socks do not match. This has been noted in your file.",
+  "Consent phrase \"I consent to be recorded\" not detected at start of video.",
+];
+const OK_LINES = ["Task accepted.", "Accepted. Reviewer was impressed, a little.", "Accepted. Well done, Ivan.", "Accepted after second review."];
+const LINES = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+const FREE = 12;
+const board = { level: 1, cells: [], active: -1, busy: false, accepted: 0, lunch: false, lunchDone: false, opened: false, deck: [], used: new Set(), firstDone: false };
+
+function newBoard() {
+  board.cells = Array.from({ length: 25 }, (_, i) => ({ state: i === FREE ? "free" : "closed", task: "" }));
+  board.active = -1;
+  $("bLevel").textContent = `Level ${board.level} of 7`;
+  $("taskBox").hidden = true;
+  drawBoard();
+}
+function drawTask() {
+  // The first card anyone opens is always the passport squats.
+  if (!board.firstDone) { board.firstDone = true; return TASKS[0]; }
+  if (!board.deck.length) board.deck = TASKS.slice(1).sort(() => Math.random() - .5);
+  return board.deck.pop();
+}
+function drawBoard() {
+  $("board").innerHTML = board.cells.map((c, i) => {
+    const cls = c.state === "free" ? "free" : c.state === "ok" ? "ok" : c.state === "open" ? "open" : c.state === "bad" ? "open bad" : "";
+    const back = c.state === "free" ? "SBB<br>FREE" : esc(c.task);
+    const dis = c.state !== "closed" || board.active >= 0 || board.busy || board.lunch;
+    return `<button class="cell ${cls}" data-i="${i}" ${dis ? "disabled" : ""} aria-label="${c.state === "closed" ? "Closed card" : esc(c.task || "Free")}"><div class="in"><div class="f">SBB</div><div class="bk">${back}</div></div></button>`;
+  }).join("");
+}
+function verdict(kind, title, text) {
+  $("verdicts").insertAdjacentHTML("afterbegin", `<div class="vd ${kind}"><b>${esc(title)}</b>${esc(text)}</div>`);
+  while ($("verdicts").children.length > 4) $("verdicts").lastElementChild.remove();
+}
+function setActive(i) {
+  board.active = i;
+  $("taskBox").hidden = i < 0;
+  if (i >= 0) $("taskText").textContent = board.cells[i].task;
+  drawBoard();
+}
+$("board").onclick = (e) => {
+  const el = e.target.closest(".cell"); if (!el || el.disabled) return;
+  const i = +el.dataset.i;
+  board.cells[i].state = "open"; board.cells[i].task = drawTask();
+  setActive(i);
+  $("recBtn").focus();
+};
+function openAuth() {
+  $("authWin").hidden = false;
+  if (board.opened) return;
+  board.opened = true; bts.start = Date.now();
+  btsLog("Scammer sent to Scam Bait Bingo");
+  newBoard();
+  verdict("info", "Welcome.", "Night transfers need Scam Bait Bingo. Open any card to start.");
+}
+let vPool = [];
+const nextVerdict = () => { if (!vPool.length) vPool = VERDICTS.slice().sort(() => Math.random() - .5); return vPool.pop(); };
+const hasLine = () => LINES.find((l) => l.every((i) => ["ok", "free"].includes(board.cells[i].state)));
+
+async function videoReceived(seconds, sizeMb) {
+  bts.vids++; $("btsVids").textContent = bts.vids;
+  btsLog(`Video (${sizeMb} MB) thrown away unwatched`);
+  board.busy = true; $("recBtn").disabled = true;
+  verdict("info", "Reviewing…", `Video ${seconds}s · ${sizeMb} MB received.`);
+  await sleep(1800 + Math.random() * 1500);
+  const i = board.active, c = board.cells[i];
+  const accept = Math.random() < 0.38;
+  if (!accept) {
+    c.state = "bad"; drawBoard();
+    verdict("", "Rejected.", nextVerdict() + " Card returned to the deck.");
+    await sleep(1300);
+    c.state = "closed"; c.task = ""; setActive(-1);
+  } else {
+    c.state = "ok"; board.accepted++; setActive(-1);
+    const line = hasLine();
+    if (line) {
+      document.querySelectorAll(".cell").forEach((el, k) => line.includes(k) && el.classList.add("win"));
+      verdict("ok", "BINGO!", `Level ${board.level} of 7 complete. Generating the next card…`);
+      btsLog(`Scammer completed Bingo level ${board.level}. There are 7. There is no level 8 either.`);
+      await sleep(2600);
+      board.level = Math.min(7, board.level + 1); newBoard();
+    } else if (Math.random() < 0.15 && board.cells.filter((x) => x.state === "ok").length >= 3) {
+      const oks = board.cells.map((x, k) => (x.state === "ok" ? k : -1)).filter((k) => k >= 0).sort(() => Math.random() - .5).slice(0, 2);
+      oks.forEach((k) => { board.cells[k].state = "closed"; board.cells[k].task = ""; });
+      verdict("", "Audit.", "Random quality audit found issues in 2 earlier videos. Those cards were reset.");
+      drawBoard();
+    } else {
+      verdict("ok", "Accepted.", pick(OK_LINES));
+    }
+  }
+  board.busy = false; $("recBtn").disabled = false; drawBoard();
+  if (board.accepted === 10 && !board.lunchDone) startLunch();
+}
+
+/* ---------- Lunch break after the 10th accepted card ---------- */
+const LUNCH_SECONDS = 30 * 60;
+let lunchEnd = 0, lunchTimer = 0;
+function startLunch() {
+  board.lunch = true; board.lunchDone = true;
+  $("lunch").hidden = false;
+  verdict("info", "Lunch break.", "Scam Bait Bingo reviewers are at lunch. Please do not close this window or you will lose your progress.");
+  btsLog("Verification 'lunch break'. Scammer left waiting");
+  lunchEnd = Date.now() + LUNCH_SECONDS * 1000;
+  tickLunch(); lunchTimer = setInterval(tickLunch, 1000); drawBoard();
+}
+function tickLunch() {
+  const left = Math.max(0, Math.round((lunchEnd - Date.now()) / 1000));
+  $("lunchLeft").textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  if (left <= 0) endLunch();
+}
+function endLunch() {
+  if (!board.lunch) return;
+  clearInterval(lunchTimer); board.lunch = false; $("lunch").hidden = true;
+  verdict("info", "Back from lunch.", "Service resumed. Open the next card.");
+  drawBoard();
+}
+$("lunchLeft").ondblclick = endLunch;
+
+/* The window can't be closed: the X only complains. */
+$("awX").onclick = () => {
+  $("awWarn").hidden = false;
+  const box = $("awBox"); box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake");
+};
+
+/* ===================== Video recorder (records, never analyses, then bins it) ===================== */
+const rec = { stream: null, mr: null, chunks: [], t0: 0, timer: 0, recording: false, fake: false };
+async function openRecorder() {
+  $("rec").hidden = false; $("upbar").hidden = true; $("upfill").style.width = "0";
+  $("recGo").textContent = "Start recording"; $("recGo").disabled = false; $("recDot").hidden = true;
+  $("recOv").textContent = "Scam Bait Bingo";
+  $("recCap").textContent = board.cells[board.active]?.task || "";
+  $("recNote").textContent = "Your video is sent securely to the specialist.";
+  $("nocam").hidden = true; rec.fake = false;
+  try {
+    rec.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+    $("cam").srcObject = rec.stream; await $("cam").play();
+  } catch {
+    rec.fake = true; $("nocam").hidden = false;
+    $("nocam").textContent = "The camera isn't available in this window. Run the app from your laptop (node server.js) to record for real. You can still send a pretend video.";
+  }
+}
+function closeRecorder() {
+  clearInterval(rec.timer);
+  if (rec.mr && rec.mr.state !== "inactive") { rec.mr.onstop = null; rec.mr.stop(); }
+  rec.stream?.getTracks().forEach((t) => t.stop());
+  rec.stream = null; rec.mr = null; rec.chunks = []; rec.recording = false;
+  $("cam").srcObject = null; $("rec").hidden = true;
+}
+$("recBtn").onclick = () => { if (!board.busy && !board.lunch && board.active >= 0) openRecorder(); };
+$("recCancel").onclick = closeRecorder;
+$("recGo").onclick = async () => {
+  if (!rec.recording) {
+    rec.recording = true; rec.t0 = Date.now(); rec.chunks = [];
+    $("recGo").textContent = "Stop and send"; $("recDot").hidden = false; $("recTime").textContent = "00:00";
+    rec.timer = setInterval(() => { const s = Math.floor((Date.now() - rec.t0) / 1000); $("recTime").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; }, 250);
+    if (!rec.fake && window.MediaRecorder) {
+      try { rec.mr = new MediaRecorder(rec.stream); rec.mr.ondataavailable = (e) => e.data.size && rec.chunks.push(e.data); rec.mr.start(500); } catch { rec.mr = null; }
+    }
+    return;
+  }
+  // Stop, "upload", then throw the video away.
+  clearInterval(rec.timer); $("recGo").disabled = true; $("recDot").hidden = true;
+  const seconds = Math.max(1, Math.round((Date.now() - rec.t0) / 1000));
+  if (rec.mr && rec.mr.state !== "inactive") await new Promise((r) => { rec.mr.onstop = r; rec.mr.stop(); });
+  let bytes = rec.chunks.reduce((s, c) => s + c.size, 0);
+  bytes = Math.max(bytes, seconds * 180000);
+  const mb = (bytes / 1048576).toFixed(1);
+  rec.chunks = []; // binned: nothing is kept, uploaded or analysed
+  $("upbar").hidden = false; $("recNote").textContent = `Uploading ${mb} MB to SBB secure server…`;
+  for (let p = 0; p <= 100; p += 4 + Math.random() * 10) { $("upfill").style.width = Math.min(100, p) + "%"; await sleep(90); }
+  $("upfill").style.width = "100%"; await sleep(250);
+  closeRecorder();
+  videoReceived(seconds, mb);
+};
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("rec").hidden) closeRecorder(); });
+
+runTerm();
+</script>
+</body></html>
