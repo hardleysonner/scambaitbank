@@ -154,8 +154,8 @@
   .rec-actions .grow { flex: 1; }
 
   /* ---------- Behind the scenes ---------- */
-  .bts-btn { z-index: 60 !important; position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 20; background: #0e1726; color: #cfe3ff; border: 0; border-radius: 99px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
-  .bts { z-index: 60 !important; position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 48px); width: min(380px, calc(100vw - 32px)); background: #0e1726; color: #dbe6f7; border-radius: 14px; padding: 16px; z-index: 20; font-size: 13px; display: grid; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+  .bts-btn { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 60; background: #0e1726; color: #cfe3ff; border: 0; border-radius: 99px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+  .bts { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 48px); width: min(380px, calc(100vw - 32px)); background: #0e1726; color: #dbe6f7; border-radius: 14px; padding: 16px; z-index: 60; font-size: 13px; display: grid; gap: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
   .bts h4 { margin: 0; font-size: 14px; color: #fff; }
   .bts .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .bts .stats div { background: #172338; border-radius: 10px; padding: 8px; }
@@ -316,7 +316,7 @@ $("btsBtn").onclick = () => { $("bts").hidden = !$("bts").hidden; };
 const TERM = [
   ["dim", "$ ./takeover.sh --target \"Ivan Petrov\" --bank sbb"],
   ["", "[*] loading leaked KYC dump (sbb_kyc_2026-11-20.tar.gz) ........ 2.4M records"],
-  ["ok", "[+] target found: Ivan Petrov, 34, Moscow, acct ··3341"],
+  ["ok", "[+] target found: Ivan Petrov, 34, Dubai, acct ··3341"],
   ["", "[*] spoofing device fingerprint: Galaxy S24 / Android 15"],
   ["", "[*] routing through tor exit 185.220.101.4"],
   ["", "[*] liveness check: streaming deepfake_ivan_v3.mp4 to SBB Verify"],
