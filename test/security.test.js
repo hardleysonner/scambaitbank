@@ -82,7 +82,7 @@ test("CSP allows only the app's own inline script and blocks framing", async () 
   const scriptSrc = csp.split(";").map((d) => d.trim()).find((d) => d.startsWith("script-src"));
   assert.doesNotMatch(scriptSrc, /unsafe-inline|unsafe-eval/);
   const html = fs.readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\r\n?/g, "\n");
   const hash = crypto.createHash("sha256").update(script).digest("base64");
   assert.ok(scriptSrc.includes(`'sha256-${hash}'`), "CSP does not carry the inline script hash");
 });

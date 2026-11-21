@@ -20,7 +20,7 @@ const HEADERS = {
 
 // Inline scripts are allowed by hash only, so injected markup can't run code.
 const csp = (html) => {
-  const hashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${crypto.createHash("sha256").update(m[1]).digest("base64")}'`);
+  const hashes = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${crypto.createHash("sha256").update(m[1].replace(/\r\n?/g, "\n")).digest("base64")}'`);
   return [
     "default-src 'self'",
     `script-src ${hashes.join(" ") || "'none'"}`,
