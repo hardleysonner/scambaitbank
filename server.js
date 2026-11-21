@@ -1,5 +1,5 @@
 // ScamBaitBank demo: a tiny static server. No AI, no database, no real bank.
-// The app is public/index.html plus ES modules in public/js and styles in public/css. Run: node server.js, then open http://localhost:3000
+// The app is public/index.html (a complete page, served as-is) plus ES modules in public/js and styles in public/css. Run: node server.js, then open http://localhost:3000
 // (the camera only works on localhost or https).
 import http from "node:http";
 import fs from "node:fs";
@@ -50,10 +50,8 @@ http.createServer((req, res) => {
     if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, "not found");
     const type = TYPES[path.extname(file)] || "application/octet-stream";
     if (file.endsWith(".html")) {
-      // index.html is written as a page body (it is also published as a claude.ai artifact); add the document skeleton here.
-      const body = fs.readFileSync(file, "utf8");
       res.writeHead(200, { ...HEADERS, "content-type": type, "content-security-policy": CSP });
-      return res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>${body}</body></html>`);
+      return res.end(fs.readFileSync(file));
     }
     res.writeHead(200, { ...HEADERS, "content-type": type });
     fs.createReadStream(file).on("error", () => res.destroy()).pipe(res);

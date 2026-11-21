@@ -65,9 +65,12 @@ for (const width of [1280, 390]) {
   test(`no task text runs under the ✓ badge on accepted cards at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await openBingo(page);
-    const tasks = await page.evaluate(() => TASKS);
+    const tasks = await page.evaluate(async () => (await import("/js/tasks.js")).TASKS);
     for (let k = 0; k < tasks.length; k += 24) {
-      await page.evaluate((k) => {
+      await page.evaluate(async (k) => {
+        const { TASKS } = await import("/js/tasks.js");
+        const { FREE } = await import("/js/bingo-engine.js");
+        const { board, drawBoard } = await import("/js/bingo.js");
         board.cells.forEach((c, i) => { if (i !== FREE) { c.state = "ok"; c.task = TASKS[(k + i) % TASKS.length]; } });
         drawBoard();
       }, k);
