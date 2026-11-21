@@ -106,8 +106,10 @@
   .cell .f { background: repeating-linear-gradient(45deg, #123c69 0 8px, #16477a 8px 16px); color: var(--gold); font-weight: 800; font-size: clamp(10px, 2.6vw, 13px); border: 2px solid #0e2f52; }
   .cell:not(:disabled):hover .f { border-color: var(--gold); }
   .cell .bk { transform: rotateY(180deg); background: #fff; border: 2px solid var(--brand-2); color: var(--text); font-size: clamp(8px, 2.1vw, 10px); line-height: 1.25; padding: 4px; font-weight: 600; }
-  .cell.ok .bk { background: #e7f6ee; border-color: var(--ok); color: var(--ok); }
-  .cell.ok .bk::after { content: "✓"; position: absolute; right: 5px; bottom: 2px; font-size: 18px; font-weight: 800; }
+  .cell.ok .bk { display: block; line-height: 1.15; background: #e7f6ee; border-color: var(--ok); color: var(--ok); }
+  /* Keeps text out of the ✓ corner, including any overflow lines. */
+  .cell.ok .bk::before { content: ""; float: right; width: 17px; height: calc(100% + 80px); shape-outside: inset(calc(100% - 101px) 0 0 0); }
+  .cell.ok .bk::after { content: "✓"; position: absolute; right: 5px; bottom: 2px; width: 15px; height: 22px; line-height: 22px; text-align: center; font-size: 18px; font-weight: 800; }
   .cell.free .bk { background: var(--gold); border-color: #a67b1d; color: var(--brand); font-size: 12px; font-weight: 800; }
   .cell.bad .bk { background: #fdecef; border-color: var(--bad); color: var(--bad); }
   .cell.win .bk { animation: glow 1s ease-in-out 3; }
