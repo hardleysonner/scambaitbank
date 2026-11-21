@@ -243,7 +243,7 @@
 <div class="authwin" id="authWin" hidden>
   <div class="aw-box" id="awBox" role="dialog" aria-modal="true" aria-label="Transfer authentication">
     <div class="aw-title">
-      <div><b>SBB Secure · Transfer authentication</b><span>AED 55,000.00 to Golden Sands Crypto FZE · pending verification</span></div>
+      <div><b>SBB Secure · Transfer authentication</b><span id="awSum">AED 55,000.00 to Golden Sands Crypto FZE · pending verification</span></div>
       <button class="aw-x" id="awX" aria-label="Close">×</button>
     </div>
     <div class="aw-warn" id="awWarn" hidden>This window cannot be closed until verification is complete. Closing it may block your account. Thank you for understanding.</div>
@@ -358,7 +358,9 @@ $("tform").onsubmit = async (e) => {
   const b = $("sendBtn"); b.disabled = true; b.innerHTML = '<span class="spinner"></span>Checking transfer…';
   await sleep(1600);
   b.disabled = false; b.textContent = "Send transfer";
-  btsLog(`Transfer attempt: AED ${$("amt").value} to ${$("to").value}. Not executed`);
+  const amt = $("amt").value, to = $("to").value;
+  btsLog(`Transfer attempt: AED ${amt} to ${to}. Not executed`);
+  $("awSum").textContent = `AED ${amt} to ${to} · pending verification`;
   $("verify").hidden = false; $("connect").focus();
 };
 $("connect").onclick = () => { $("verify").hidden = true; openAuth(); };
